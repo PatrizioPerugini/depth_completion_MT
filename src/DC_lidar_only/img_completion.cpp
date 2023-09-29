@@ -26,6 +26,8 @@ void img_completion(const cv::Mat &sparse_r_img,
     //densify
     dense_r_img = sparse_r_img.clone();
 
+    std::cout << "NUMERO ROWS, COLS: " << rows << " " << cols << std::endl; 
+
     //for (int i = 0; i<rows; i++){
     //    for (int j = 0; j<cols; j++){
     //        dense_r_img.at<float>(i,j)=dense_r_img.at<float>(i,j)/256;
@@ -48,7 +50,7 @@ void img_completion(const cv::Mat &sparse_r_img,
     std::cout <<"max range is" << max_r_img_val << std::endl;
 
     //first invert the values, in this way we also create a buffer for wrong values
-    float invert_buffer = 2.0;
+    float invert_buffer = 20;
 
     for (int i =0; i<rows; i++){
         for(int j = 0; j<cols;j++){
@@ -57,6 +59,7 @@ void img_completion(const cv::Mat &sparse_r_img,
             if (depth > 0.1){ 
                 //is a valid pixel -> invert its value
                 //dense_r_img.at<float>(i,j) = max_r_img_val + invert_buffer - depth;
+                //QUESTA È QUELLA BONA
                 dense_r_img.at<float>(i,j) = max_depth - depth;
             }
 
@@ -75,7 +78,8 @@ void img_completion(const cv::Mat &sparse_r_img,
 
    // std::cout<<sparse_r_img<<std::endl;
     cv::dilate(dense_r_img, dense_r_img, diamond_kernel_5);
-    //std::cout << "0k"<<std::endl;
+   
+
 
     cv::Mat full_kernel_5 = cv::Mat::ones(5, 5, CV_8UC1);
     cv::morphologyEx(dense_r_img, dense_r_img, cv::MORPH_CLOSE, full_kernel_5);
@@ -94,8 +98,11 @@ void img_completion(const cv::Mat &sparse_r_img,
             }
         }
     }
-     //extend pixels to the top of the image
-    if (extr){
+     //extend pixels to the top of the image   
+    //extr = true;  
+    int densify = true;
+    if (densify){
+    //if (true){
         
         for(int j = 0; j < cols; ++j){
             int max_index = 0;
@@ -119,6 +126,7 @@ void img_completion(const cv::Mat &sparse_r_img,
                 dense_r_img.at<float>(i, j) = min_val;
             }
         }
+    }
         //  Large Fill
         cv::Mat full_kernel_31 = cv::Mat::ones(31, 31, CV_8UC1);
             // std::cout << "comincio a extrapola nel while " << std::endl;
@@ -134,30 +142,31 @@ void img_completion(const cv::Mat &sparse_r_img,
                 }
             }
         }
-        
-        //while(true){
-        //    specific_range_img = dense_r_img.clone();
-        //    cv::dilate(specific_range_img, specific_range_img, full_kernel_31);
-        //    int hole_pixel_count = 0;
-        //    for(int i=0; i < rows; ++i){
-        //        for(int j = 0; j < cols; ++j){
-        //            float depth = dense_r_img.at<float>(i, j);
-        //            //std::cout <<depth<< std::endl;
-        //            if (depth < 0.1){
-        //                dense_r_img.at<float>(i, j) = specific_range_img.at<float>(i, j); 
-        //                hole_pixel_count++;
-        //            }
-        //        }
-        //    }
-        //    //image filled
-        //    std::cout << hole_pixel_count << std::endl;
-        //    if (hole_pixel_count == 0){
-        //             //std::cout << "ho finito de estrapola" << std::endl;
-        //        break;
-        //        }
-        //}
+    ///*
+        while(densify){
+            specific_range_img = dense_r_img.clone();
+            cv::dilate(specific_range_img, specific_range_img, full_kernel_31);
+            int hole_pixel_count = 0;
+            for(int i=0; i < rows; ++i){
+                for(int j = 0; j < cols; ++j){
+                    float depth = dense_r_img.at<float>(i, j);
+                    //std::cout <<depth<< std::endl;
+                    if (depth < 0.1){
+                        dense_r_img.at<float>(i, j) = specific_range_img.at<float>(i, j); 
+                        hole_pixel_count++;
+                    }
+                }
+            }
+            //image filled
+            std::cout << hole_pixel_count << std::endl;
+            if (hole_pixel_count == 0){
+                     //std::cout << "ho finito de estrapola" << std::endl;
+                break;
+                }
+        }
+    //*/
 
-    }
+    //} MESSA SOPRA
     cv::medianBlur(dense_r_img, dense_r_img, 5);
     
     if(blur_type == std::string("bilateral")){
@@ -184,7 +193,10 @@ void img_completion(const cv::Mat &sparse_r_img,
             float depth = dense_r_img.at<float>(i, j);
             if (depth > 0.1){
                 //dense_r_img.at<float>(i, j) = max_r_img_val + invert_buffer- dense_r_img.at<float>(i, j);
+                //COMMENT THIS LINE IN ORDER TO GET A DEPTH MAP WHICH IS RED AND THEN BLUE,
+                //LATER TRY TO ADJUST THIS 
                 dense_r_img.at<float>(i, j) = max_depth- dense_r_img.at<float>(i, j);
+                //continue;
             }
         }
     }

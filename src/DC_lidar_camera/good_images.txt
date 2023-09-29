@@ -1,0 +1,8 @@
+//1
+std::string todo = "2011_09_28";
+std::string year = "0037";
+std::string sample = "0000000053";
+//2
+std::string todo = "2011_10_03";
+std::string year = "0047";
+std::string sample = "0000000245";
